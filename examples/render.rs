@@ -4,6 +4,7 @@ extern crate petgraph;
 
 use petgraph::graph::Graph;
 use petgraph::dot::Dot;
+use flow::residuals;
 
 fn main() {
     // All arrows going from top to bottom, except B -> C
@@ -29,7 +30,9 @@ fn main() {
         (c, d, 5f32)
     ]);
 
-    let dot = Dot::new(&g);
+    println!("{}", Dot::new(&g));
 
-    println!("{}", dot);
+    let r = residuals(&g);
+
+    println!("{}", Dot::new(&r));
 }
