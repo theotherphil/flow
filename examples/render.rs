@@ -4,7 +4,29 @@ extern crate petgraph;
 
 use petgraph::graph::Graph;
 use petgraph::dot::Dot;
-use flow::residuals;
+use flow::{residuals, find_augmenting_path};
+use std::fmt::Display;
+use std::fs::File;
+use std::path::Path;
+use std::io::Write;
+
+fn print_dot<N: Display, E: Display>(g: &Graph<N, E>, path: &str) {
+    use std::process::Command;
+
+    let mut f = File::create(path).unwrap();
+    write!(&mut f, "{}", Dot::new(g));
+
+    let svg_path = Path::new(path).with_extension("svg");
+    let output = Command::new("dot")
+        .arg(path)
+        .arg("-Tsvg")
+        .arg("-o")
+        .arg(svg_path)
+        .output()
+        .unwrap_or_else(|e| { panic!("failed to execute process: {}", e) });
+
+    println!("{:?}", output);
+}
 
 fn main() {
     // All arrows going from top to bottom, except B -> C
@@ -29,10 +51,11 @@ fn main() {
         (b, d, 1f32),
         (c, d, 5f32)
     ]);
+    print_dot(&g, "original.dot");
 
-    println!("{}", Dot::new(&g));
+    let mut r = residuals(&g);
+    print_dot(&r, "res.dot");
 
-    let r = residuals(&g);
-
-    println!("{}", Dot::new(&r));
+    find_augmenting_path(&mut r, a, d);
+    print_dot(&r, "aug.dot");
 }
