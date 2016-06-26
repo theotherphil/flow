@@ -3,7 +3,7 @@
 
 #[cfg(test)]
 extern crate test;
-
+extern crate fnv;
 extern crate petgraph;
 
 use petgraph::graph::{Graph, NodeIndex};
@@ -11,6 +11,8 @@ use petgraph::EdgeDirection::Outgoing;
 use std::collections::vec_deque::VecDeque;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::hash::BuildHasherDefault;
+use fnv::FnvHasher;
 
 /// Edge weights in input graph are capacities.
 /// Edge weights in output graph are residual capacities.
@@ -88,7 +90,7 @@ pub fn find_augmenting_path<N: Clone>(r: &mut Graph<N, f32>, src: NodeIndex, dst
     let mut visited = HashSet::new();
 
     // NodeIndex -> (NodeIndex, EdgeWeight)
-    let mut predecessors = HashMap::new();
+    let mut predecessors: HashMap<_, _, BuildHasherDefault<FnvHasher>> = HashMap::default();
 
     let mut queue = VecDeque::new();
     queue.push_front(src);
