@@ -35,9 +35,6 @@ pub fn residuals<N: Clone>(g: &Graph<N, f32>) -> Graph<N, f32> {
     res
 }
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub enum Colour { White, Grey, Black }
-
 pub fn flow_from_residuals<N: Clone>(g: &Graph<N, f32>, r: &Graph<N, f32>) -> Graph<N, f32> {
     let mut f = g.clone();
     for e in f.edge_indices() {
@@ -75,10 +72,7 @@ pub fn cut_from_residual<N: Clone>(r: &Graph<N, f32>, src: NodeIndex) -> Vec<N> 
 /// flow through this path and returns true.
 pub fn find_augmenting_path<N: Clone>(r: &mut Graph<N, f32>, src: NodeIndex, dst: NodeIndex)
     -> bool {
-    let mut colours = HashMap::new();
-    for n in r.node_indices() {
-        colours.insert(n.clone(), Colour::White);
-    }
+    let mut visited = HashSet::new();
 
     // NodeIndex -> (NodeIndex, EdgeWeight)
     let mut predecessors = HashMap::new();
@@ -89,19 +83,17 @@ pub fn find_augmenting_path<N: Clone>(r: &mut Graph<N, f32>, src: NodeIndex, dst
     while let Some(v) = queue.pop_back() {
         let neighbours: Vec<(NodeIndex, &f32)> = r
             .edges_directed(v, Outgoing)
-            .filter(|ne| *ne.1 > 0f32 && *colours.get(&ne.0).unwrap() == Colour::White)
+            .filter(|ne| *ne.1 > 0f32 && !visited.contains(&ne.0))
             .collect::<Vec<_>>();
 
         for n in neighbours {
             predecessors.insert(n.0, (v, *n.1));
             queue.push_front(n.0);
-            *colours.get_mut(&n.0).unwrap() = Colour::Grey;
+            visited.insert(n.0);
         }
-
-        *colours.get_mut(&v).unwrap() = Colour::Black;
     }
 
-    if colours[&dst] == Colour::White {
+    if !visited.contains(&dst) {
         return false;
     }
 
