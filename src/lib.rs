@@ -1,4 +1,9 @@
 
+#![cfg_attr(test, feature(test))]
+
+#[cfg(test)]
+extern crate test;
+
 extern crate petgraph;
 
 use petgraph::graph::{Graph, NodeIndex};
@@ -33,6 +38,14 @@ pub fn residuals<N: Clone>(g: &Graph<N, f32>) -> Graph<N, f32> {
     }
 
     res
+}
+
+/// Finds a min cut in g and returns the set of nodes in the source half.
+pub fn min_cut<N: Clone>(g: &Graph<N, f32>, src: NodeIndex, dst: NodeIndex) -> Vec<N> {
+    let mut r = residuals(g);
+    while find_augmenting_path(&mut r, src, dst) {
+    }
+    cut_from_residual(&r, src)
 }
 
 pub fn flow_from_residuals<N: Clone>(g: &Graph<N, f32>, r: &Graph<N, f32>) -> Graph<N, f32> {
@@ -120,13 +133,54 @@ pub fn find_augmenting_path<N: Clone>(r: &mut Graph<N, f32>, src: NodeIndex, dst
 
 #[cfg(test)]
 mod tests {
-    use super::residuals;
+    use super::{min_cut, residuals};
     use petgraph::graph::{Graph};
+    use test::Bencher;
 
     #[test]
     #[should_panic]
     fn residuals_rejects_opposite_edges() {
         let g = Graph::<(), f32>::from_edges(&[(0, 1), (1, 0)]);
         let _ = residuals(&g);
+    }
+
+    #[test]
+    fn cut_small() {
+        let mut g = Graph::<&str, f32>::new();
+        let a = g.add_node("A");
+        let b = g.add_node("B");
+        let c = g.add_node("C");
+        let d = g.add_node("D");
+        g.extend_with_edges(&[
+            (a, b, 7f32),
+            (a, c, 2f32),
+            (b, c, 2f32),
+            (b, d, 1f32),
+            (c, d, 5f32)
+        ]);
+
+        let mut cut = min_cut(&g, a, d);
+        cut.sort();
+        assert_eq!(cut, vec!["A", "B"]);
+    }
+
+    #[bench]
+    fn bench_small(t: &mut Bencher) {
+        let mut g = Graph::<&str, f32>::new();
+        let a = g.add_node("A");
+        let b = g.add_node("B");
+        let c = g.add_node("C");
+        let d = g.add_node("D");
+        g.extend_with_edges(&[
+            (a, b, 7f32),
+            (a, c, 2f32),
+            (b, c, 2f32),
+            (b, d, 1f32),
+            (c, d, 5f32)
+        ]);
+
+        t.iter(|| {
+            min_cut(&g, a, d)
+        });
     }
 }
