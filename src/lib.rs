@@ -112,10 +112,13 @@ pub fn find_augmenting_path<N: Clone>(r: &mut Graph<N, f32>, src: NodeIndex, dst
     let mut min = std::f32::MAX;
     let mut path: Vec<(NodeIndex, NodeIndex, f32)> = vec![];
     while current != src {
-        let pred: (NodeIndex, f32) = predecessors[&current];
-        min = min.min(pred.1);
-        path.push((pred.0, current, pred.1));
-        current = pred.0;
+        let prev_and_wgt: (NodeIndex, f32) = predecessors[&current];
+        let prev = prev_and_wgt.0;
+        let wgt = prev_and_wgt.1;
+
+        min = min.min(wgt);
+        path.push((prev, current, wgt));
+        current = prev;
     }
 
     for nn in path.iter() {
