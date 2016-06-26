@@ -6,6 +6,7 @@ use petgraph::EdgeDirection::{Incoming, Outgoing};
 use petgraph::dot::Dot;
 use std::collections::vec_deque::VecDeque;
 use std::collections::HashMap;
+use std::collections::HashSet;
 
 /// Edge weights in input graph are capacities.
 /// Edge weights in output graph are residual capacities.
@@ -40,6 +41,32 @@ pub fn flow_from_residuals<N: Clone>(g: &Graph<N, f32>, r: &Graph<N, f32>) -> Gr
         *f.edge_weight_mut(e).unwrap() = *r.edge_weight(residual).unwrap();
     }
     f
+}
+
+/// Returns the set of nodes in the source half of the cut.
+pub fn cut_from_residual<N: Clone>(r: &Graph<N, f32>, src: NodeIndex) -> Graph<N, f32> {
+    let mut queue = VecDeque::new();
+    queue.push_front(src);
+
+    let mut visited = HashSet::new();
+
+    while let Some(v) = queue.pop_back() {
+        let neighbours: Vec<(NodeIndex, &f32)> = r
+            .edges_directed(v, Outgoing)
+            .filter(|ne| *ne.1 > 0f32 && !visited.contains(&ne.0))
+            .collect::<Vec<_>>();
+
+        for n in neighbours {
+            queue.push_front(n.0);
+            visited.insert(n.0);
+        }
+    }
+
+    let mut c = Graph::<N, f32>::new();
+    for n in visited {
+        c.add_node(r.node_weight(n).unwrap().clone());
+    }
+    c
 }
 
 /// Attempts to find an augmenting path in the provided residual graph.

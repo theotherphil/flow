@@ -4,7 +4,7 @@ extern crate petgraph;
 
 use petgraph::graph::Graph;
 use petgraph::dot::Dot;
-use flow::{residuals, find_augmenting_path, flow_from_residuals};
+use flow::{residuals, find_augmenting_path, flow_from_residuals, cut_from_residual};
 use std::fmt::Display;
 use std::fs::File;
 use std::path::Path;
@@ -39,6 +39,7 @@ fn create_html_from_dot_files() -> Result<()> {
     try!(write!(&mut f, "<img src=\"{}\">", "aug_1.svg"));
     try!(write!(&mut f, "<img src=\"{}\">", "aug_2.svg"));
     try!(write!(&mut f, "<img src=\"{}\">", "flow.svg"));
+    try!(write!(&mut f, "<img src=\"{}\">", "cut.svg"));
     try!(write!(&mut f, "</body>"));
     Ok(())
 }
@@ -80,6 +81,9 @@ fn main() {
 
     let f = flow_from_residuals(&g, &r);
     print_dot(&f, "flow.dot");
+
+    let c = cut_from_residual(&r, a);
+    print_dot(&c, "cut.dot");
 
     create_html_from_dot_files();
 }
