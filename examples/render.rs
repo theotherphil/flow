@@ -4,11 +4,12 @@ extern crate petgraph;
 
 use petgraph::graph::Graph;
 use petgraph::dot::Dot;
-use flow::{residuals, find_augmenting_path};
+use flow::{residuals, find_augmenting_path, flow_from_residuals};
 use std::fmt::Display;
 use std::fs::File;
 use std::path::Path;
 use std::io::Write;
+use std::io::Result;
 
 fn print_dot<N: Display, E: Display>(g: &Graph<N, E>, path: &str) {
     use std::process::Command;
@@ -26,6 +27,20 @@ fn print_dot<N: Display, E: Display>(g: &Graph<N, E>, path: &str) {
         .unwrap_or_else(|e| { panic!("failed to execute process: {}", e) });
 
     println!("{:?}", output);
+}
+
+fn create_html_from_dot_files() -> Result<()> {
+    let mut f = try!(File::create("flow.html"));
+    try!(write!(&mut f, "<!doctype html>"));
+    try!(write!(&mut f, "<body>"));
+    try!(write!(&mut f, "<img src=\"{}\">", "original.svg"));
+    try!(write!(&mut f, "<img src=\"{}\">", "res.svg"));
+    try!(write!(&mut f, "<img src=\"{}\">", "aug_0.svg"));
+    try!(write!(&mut f, "<img src=\"{}\">", "aug_1.svg"));
+    try!(write!(&mut f, "<img src=\"{}\">", "aug_2.svg"));
+    try!(write!(&mut f, "<img src=\"{}\">", "flow.svg"));
+    try!(write!(&mut f, "</body>"));
+    Ok(())
 }
 
 fn main() {
@@ -56,6 +71,15 @@ fn main() {
     let mut r = residuals(&g);
     print_dot(&r, "res.dot");
 
-    find_augmenting_path(&mut r, a, d);
-    print_dot(&r, "aug.dot");
+    let mut count = 0;
+
+    while find_augmenting_path(&mut r, a, d) {
+        print_dot(&r, &format!("aug_{}.dot", count));
+        count += 1;
+    }
+
+    let f = flow_from_residuals(&g, &r);
+    print_dot(&f, "flow.dot");
+
+    create_html_from_dot_files();
 }

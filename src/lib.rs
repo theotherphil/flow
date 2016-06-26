@@ -22,8 +22,8 @@ pub fn residuals<N: Clone>(g: &Graph<N, f32>) -> Graph<N, f32> {
     for e in g.edge_indices() {
         let endpoints = g.edge_endpoints(e).unwrap();
         let weight = g.edge_weight(e).unwrap();
-        res.add_edge(endpoints.1, endpoints.0, *weight);
-        res.add_edge(endpoints.0, endpoints.1, 0f32);
+        res.add_edge(endpoints.0, endpoints.1, *weight);
+        res.add_edge(endpoints.1, endpoints.0, 0f32);
     }
 
     res
@@ -31,6 +31,16 @@ pub fn residuals<N: Clone>(g: &Graph<N, f32>) -> Graph<N, f32> {
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum Colour { White, Grey, Black }
+
+pub fn flow_from_residuals<N: Clone>(g: &Graph<N, f32>, r: &Graph<N, f32>) -> Graph<N, f32> {
+    let mut f = g.clone();
+    for e in f.edge_indices() {
+        let endpoints = f.edge_endpoints(e).unwrap();
+        let residual = r.find_edge(endpoints.1, endpoints.0).unwrap();
+        *f.edge_weight_mut(e).unwrap() = *r.edge_weight(residual).unwrap();
+    }
+    f
+}
 
 /// Attempts to find an augmenting path in the provided residual graph.
 /// Returns false if no such path is found. Otherwise pushes the maximum possible
