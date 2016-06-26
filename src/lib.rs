@@ -94,6 +94,9 @@ pub fn find_augmenting_path<N: Clone>(r: &mut Graph<N, f32>, src: NodeIndex, dst
     queue.push_front(src);
 
     while let Some(v) = queue.pop_back() {
+        if visited.contains(&dst) {
+            break;
+        }
         for n in r.edges_directed(v, Outgoing).filter(|n| *n.1 > 0f32) {
             if visited.contains(&n.0) {
                 continue;
