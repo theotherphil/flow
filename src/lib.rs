@@ -1,9 +1,8 @@
 
 extern crate petgraph;
 
-use petgraph::graph::{Graph, NodeIndex, node_index};
-use petgraph::EdgeDirection::{Incoming, Outgoing};
-use petgraph::dot::Dot;
+use petgraph::graph::{Graph, NodeIndex};
+use petgraph::EdgeDirection::Outgoing;
 use std::collections::vec_deque::VecDeque;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -22,6 +21,12 @@ pub fn residuals<N: Clone>(g: &Graph<N, f32>) -> Graph<N, f32> {
 
     for e in g.edge_indices() {
         let endpoints = g.edge_endpoints(e).unwrap();
+
+        if let Some(_) = g.find_edge(endpoints.1, endpoints.0) {
+            panic!("Graph contains opposite edges: ({x}, {y}) and ({y}, {x})",
+                x=endpoints.0.index(), y=endpoints.1.index());
+        }
+
         let weight = g.edge_weight(e).unwrap();
         res.add_edge(endpoints.0, endpoints.1, *weight);
         res.add_edge(endpoints.1, endpoints.0, 0f32);
@@ -44,7 +49,7 @@ pub fn flow_from_residuals<N: Clone>(g: &Graph<N, f32>, r: &Graph<N, f32>) -> Gr
 }
 
 /// Returns the set of nodes in the source half of the cut.
-pub fn cut_from_residual<N: Clone>(r: &Graph<N, f32>, src: NodeIndex) -> Graph<N, f32> {
+pub fn cut_from_residual<N: Clone>(r: &Graph<N, f32>, src: NodeIndex) -> Vec<N> {
     let mut queue = VecDeque::new();
     queue.push_front(src);
 
@@ -62,11 +67,7 @@ pub fn cut_from_residual<N: Clone>(r: &Graph<N, f32>, src: NodeIndex) -> Graph<N
         }
     }
 
-    let mut c = Graph::<N, f32>::new();
-    for n in visited {
-        c.add_node(r.node_weight(n).unwrap().clone());
-    }
-    c
+    visited.iter().map(|n| r.node_weight(*n).unwrap().clone()).collect::<Vec<_>>()
 }
 
 /// Attempts to find an augmenting path in the provided residual graph.
@@ -127,7 +128,13 @@ pub fn find_augmenting_path<N: Clone>(r: &mut Graph<N, f32>, src: NodeIndex, dst
 
 #[cfg(test)]
 mod tests {
+    use super::residuals;
+    use petgraph::graph::{Graph};
+
     #[test]
-    fn it_works() {
+    #[should_panic]
+    fn residuals_rejects_opposite_edges() {
+        let g = Graph::<(), f32>::from_edges(&[(0, 1), (1, 0)]);
+        let _ = residuals(&g);
     }
 }

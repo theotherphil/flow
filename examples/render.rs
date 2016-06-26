@@ -82,7 +82,11 @@ fn main() {
     let f = flow_from_residuals(&g, &r);
     print_dot(&f, "flow.dot");
 
-    let c = cut_from_residual(&r, a);
+    let s = cut_from_residual(&r, a);
+    let mut c = Graph::<&str, f32>::new();
+    for n in s {
+        c.add_node(n);
+    }
     print_dot(&c, "cut.dot");
 
     create_html_from_dot_files();
