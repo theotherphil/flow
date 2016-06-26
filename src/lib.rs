@@ -11,8 +11,8 @@ use petgraph::EdgeDirection::Outgoing;
 use std::collections::vec_deque::VecDeque;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::hash::BuildHasherDefault;
-use fnv::FnvHasher;
+
+type Hasher = std::hash::BuildHasherDefault<fnv::FnvHasher>;
 
 /// Edge weights in input graph are capacities.
 /// Edge weights in output graph are residual capacities.
@@ -65,7 +65,7 @@ pub fn cut_from_residual<N: Clone>(r: &Graph<N, f32>, src: NodeIndex) -> Vec<N> 
     let mut queue = VecDeque::new();
     queue.push_front(src);
 
-    let mut visited = HashSet::new();
+    let mut visited: HashSet<_, Hasher> = HashSet::default();
 
     while let Some(v) = queue.pop_back() {
         let neighbours: Vec<(NodeIndex, &f32)> = r
@@ -87,10 +87,10 @@ pub fn cut_from_residual<N: Clone>(r: &Graph<N, f32>, src: NodeIndex) -> Vec<N> 
 /// flow through this path and returns true.
 pub fn find_augmenting_path<N: Clone>(r: &mut Graph<N, f32>, src: NodeIndex, dst: NodeIndex)
     -> bool {
-    let mut visited = HashSet::new();
+    let mut visited: HashSet<_, Hasher> = HashSet::default();
 
     // NodeIndex -> (NodeIndex, EdgeWeight)
-    let mut predecessors: HashMap<_, _, BuildHasherDefault<FnvHasher>> = HashMap::default();
+    let mut predecessors: HashMap<_, _, Hasher> = HashMap::default();
 
     let mut queue = VecDeque::new();
     queue.push_front(src);
