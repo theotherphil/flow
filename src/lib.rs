@@ -68,12 +68,10 @@ pub fn cut_from_residual<N: Clone>(r: &Graph<N, f32>, src: NodeIndex) -> Vec<N> 
     let mut visited: HashSet<_, Hasher> = HashSet::default();
 
     while let Some(v) = queue.pop_back() {
-        let neighbours: Vec<(NodeIndex, &f32)> = r
-            .edges_directed(v, Outgoing)
-            .filter(|ne| *ne.1 > 0f32 && !visited.contains(&ne.0))
-            .collect::<Vec<_>>();
-
-        for n in neighbours {
+        for n in r.edges_directed(v, Outgoing).filter(|n| *n.1 > 0f32) {
+            if visited.contains(&n.0) {
+                continue;
+            }
             queue.push_front(n.0);
             visited.insert(n.0);
         }
@@ -96,12 +94,10 @@ pub fn find_augmenting_path<N: Clone>(r: &mut Graph<N, f32>, src: NodeIndex, dst
     queue.push_front(src);
 
     while let Some(v) = queue.pop_back() {
-        let neighbours: Vec<(NodeIndex, &f32)> = r
-            .edges_directed(v, Outgoing)
-            .filter(|ne| *ne.1 > 0f32 && !visited.contains(&ne.0))
-            .collect::<Vec<_>>();
-
-        for n in neighbours {
+        for n in r.edges_directed(v, Outgoing).filter(|n| *n.1 > 0f32) {
+            if visited.contains(&n.0) {
+                continue;
+            }
             predecessors.insert(n.0, (v, *n.1));
             queue.push_front(n.0);
             visited.insert(n.0);
